@@ -6,7 +6,7 @@ from collections import Counter
 import pandas as pd
 import streamlit as st
 
-# FORCE POPULATE MODERN SQLITE3 BEFORE CHROMADB IMPORTS
+# 1. FORCE POPULATE MODERN SQLITE3 BEFORE ANY CHROMADB IMPORTS
 try:
     __import__('pysqlite3')
     import sys
@@ -16,7 +16,7 @@ except ImportError:
 
 # Page Configuration
 st.set_page_config(
-    page_title="GIS Document Assistant",
+    page_title="GIS Document Assistant 2",
     page_icon="🌐",
     layout="wide",
     initial_sidebar_state="expanded",
