@@ -1,6 +1,3 @@
-__import__('pysqlite3')
-import sys
-sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 import os
 import json
 import tempfile
@@ -9,55 +6,82 @@ from collections import Counter
 import pandas as pd
 import streamlit as st
 
-# App config
+# Fix SQLite compatibility on Linux servers
+try:
+    __import__('pysqlite3')
+    import sys
+    sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+except ImportError:
+    pass
+
+# Page Configuration
 st.set_page_config(
     page_title="GIS Document Assistant",
-    page_icon="🗺️",
+    page_icon="🌐",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# Custom CSS for better UI/UX
+# Premium Dark & Modern UI Styling
 st.markdown("""
 <style>
+    /* Main container adjustments */
+    .reportview-container {
+        background: #0e1117;
+    }
+    
+    /* Message Cards Styling */
     [data-testid="stChatMessage"] { 
-        border-radius: 12px; 
-        margin-bottom: 12px;
-        padding: 15px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        border-radius: 16px; 
+        margin-bottom: 14px;
+        padding: 20px;
+        border: 1px solid #262730;
+        background-color: #161b22;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
+    
+    /* Document source references */
     .source-card {
-        background: #f8f9fa;
-        border-left: 4px solid #0078d4;
-        border-radius: 6px;
-        padding: 12px 16px;
-        margin: 8px 0;
-        font-size: 13px;
-        color: #333;
+        background: #0d1117;
+        border-left: 4px solid #1f6feb;
+        border-radius: 8px;
+        padding: 14px 18px;
+        margin: 10px 0;
+        font-size: 13.5px;
+        color: #c9d1d9;
+        border-top: 1px solid #21262d;
+        border-right: 1px solid #21262d;
+        border-bottom: 1px solid #21262d;
     }
+    
+    /* Premium Dashboard Stats */
     .stat-box {
-        background: #ffffff;
-        border: 1px solid #e0e0e0;
-        border-radius: 12px;
-        padding: 16px;
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 14px;
+        padding: 18px;
         text-align: center;
-        font-size: 24px;
+        font-size: 26px;
         font-weight: 700;
-        color: #0078d4;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        color: #58a6ff;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     }
     .stat-label { 
-        font-size: 13px; 
-        color: #666; 
-        font-weight: 500; 
+        font-size: 12px; 
+        color: #8b949e; 
+        font-weight: 600; 
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.8px;
+        margin-top: 4px;
     }
+    
+    /* Brand Footer */
     .footer {
-        font-size: 12px;
-        color: #888;
+        font-size: 11px;
+        color: #484f58;
         text-align: center;
-        margin-top: 40px;
+        margin-top: 50px;
+        letter-spacing: 0.5px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -93,7 +117,7 @@ class GISDocumentAssistant:
         if self.vectorstore is None:
             self.vectorstore = Chroma.from_documents(
                 documents=chunks, embedding=self.embeddings,
-                collection_name="gis_streamlit"
+                collection_name="gis_rafat_kamel"
             )
         else:
             self.vectorstore.add_documents(chunks)
@@ -141,7 +165,7 @@ class GISDocumentAssistant:
                 {
                     "pdf": c.metadata.get("pdf_name", "?"),
                     "page": c.metadata.get("page", "?"),
-                    "text": c.page_content[:200] + "...",
+                    "text": c.page_content[:250] + "...",
                 }
                 for c in chunks
             ],
@@ -161,32 +185,33 @@ class GISDocumentAssistant:
         return json.dumps(payload, ensure_ascii=False, indent=2)
 
 
-# Init session state
-if "assistant" not in st.session_state:
-    st.session_state.assistant = None
+# Session state Initialization
+assistant: GISDocumentAssistant = st.session_state.get("assistant", None)
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 
-# Sidebar layout
+# Sidebar Control Panel
 with st.sidebar:
-    st.title("🗺️ Geo-AI Assistant")
-    st.caption("Empowering GIS with LLMs")
+    st.title("🌐 GIS Insight")
+    st.caption("Advanced Document Intelligence")
     st.divider()
 
-    st.subheader("🔑 API Configuration")
-    api_key = st.text_input("Gemini API Key", type="password", placeholder="Enter AIza...")
+    st.subheader("🔑 Authentication")
+    api_key = st.text_input("Gemini API Key", type="password", placeholder="Paste AIzaSy...")
 
-    if api_key and st.session_state.assistant is None:
+    if api_key and st.session_state.get("assistant") is None:
         st.session_state.assistant = GISDocumentAssistant(api_key)
+        st.rerun()
 
     if not api_key:
-        st.warning("⚠️ Please provide a valid Gemini API key.")
+        st.warning("🔒 Provide an API key to initialize the engine.")
         st.stop()
 
     st.divider()
 
-    st.subheader("📄 Knowledge Base")
+    st.subheader("📂 Geospatial Repository")
     uploaded_files = st.file_uploader(
         "Upload GIS PDF documents",
         type="pdf",
@@ -195,116 +220,113 @@ with st.sidebar:
     )
 
     if uploaded_files:
-        assistant: GISDocumentAssistant = st.session_state.assistant
+        assistant = st.session_state.assistant
         already_loaded = set(assistant.loaded_pdfs)
 
         for uploaded in uploaded_files:
             if uploaded.name not in already_loaded:
-                with st.spinner(f"Ingesting {uploaded.name}..."):
+                with st.spinner(f"Processing {uploaded.name}..."):
                     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
                         tmp.write(uploaded.read())
                         tmp_path = tmp.name
                     n = assistant.load_pdf(tmp_path, uploaded.name)
                     os.unlink(tmp_path)
-                st.toast(f"Loaded: {uploaded.name} ({n} chunks)", icon="✅")
+                st.toast(f"Indexed: {uploaded.name} ({n} chunks)", icon="⚡")
 
-    if st.session_state.assistant and st.session_state.assistant.loaded_pdfs:
-        with st.expander("📁 Indexed Documents", expanded=True):
-            for pdf in st.session_state.assistant.loaded_pdfs:
-                st.markdown(f"- `{pdf}`")
+    if assistant and assistant.loaded_pdfs:
+        with st.expander("📚 Active Core Database", expanded=True):
+            for pdf in assistant.loaded_pdfs:
+                st.markdown(f"📄 `{pdf}`")
 
     st.divider()
     
-    # Advanced settings
-    with st.expander("⚙️ Advanced Settings"):
+    with st.expander("⚙️ Tuning & Parameters"):
         chunk_size = st.slider("Chunk size", 200, 1000, 500, 50)
         
-    if st.session_state.assistant and st.session_state.assistant.chat_history:
-        json_str = st.session_state.assistant.export_json()
-        fname = f"gis_chat_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-        st.download_button("⬇️ Export History", data=json_str, file_name=fname, mime="application/json", use_container_width=True)
+    if assistant and assistant.chat_history:
+        st.subheader("💾 Actions")
+        json_str = assistant.export_json()
+        fname = f"gis_analytics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        st.download_button("⬇️ Download Analytics", data=json_str, file_name=fname, mime="application/json", use_container_width=True)
 
-    if st.button("🗑️ Reset Session", use_container_width=True, type="primary"):
+    if st.button("🗑️ Clear Workspace", use_container_width=True, type="primary"):
         st.session_state.messages = []
-        if st.session_state.assistant:
+        if st.session_state.get("assistant"):
             st.session_state.assistant.chat_history = []
         st.rerun()
 
-    st.markdown('<div class="footer">Developed for GIS Professionals</div>', unsafe_allow_html=True)
+    st.markdown('<div class="footer">GIS_Document_Assistant_rafat_kamel • v2.0</div>', unsafe_allow_html=True)
 
 
-# Main UI
-assistant: GISDocumentAssistant = st.session_state.assistant
-
-col1, col2 = st.columns([3, 2])
-with col1:
-    st.header("Document Intelligence")
-    st.caption("Ask queries in English or Arabic regarding your spatial data & docs.")
+# Main Interface Architecture
+col_header, col_metrics = st.columns([3, 2])
+with col_header:
+    st.title("🌐 GIS Document Assistant")
+    st.caption("Semantic Neural Search over Geospatial Mapping Documentation Engine.")
 
 if assistant and assistant.loaded_pdfs:
-    with col2:
+    with col_metrics:
         c1, c2, c3 = st.columns(3)
-        total_q = len(assistant.chat_history)
         with c1:
-            st.markdown(f'<div class="stat-box">{len(assistant.loaded_pdfs)}<br><span class="stat-label">Docs</span></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="stat-box">{len(assistant.loaded_pdfs)}<br><span class="stat-label">Indices</span></div>', unsafe_allow_html=True)
         with c2:
-            st.markdown(f'<div class="stat-box">{assistant.total_chunks}<br><span class="stat-label">Chunks</span></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="stat-box">{assistant.total_chunks}<br><span class="stat-label">Vectors</span></div>', unsafe_allow_html=True)
         with c3:
-            st.markdown(f'<div class="stat-box">{total_q}<br><span class="stat-label">Queries</span></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="stat-box">{len(assistant.chat_history)}<br><span class="stat-label">Queries</span></div>', unsafe_allow_html=True)
 
 st.divider()
 
 if not assistant or not assistant.loaded_pdfs:
-    st.info("👋 Welcome! Please upload your GIS PDF documents from the sidebar to begin.")
+    st.info("💡 Get started by uploading specialized GIS map specs or project guidelines via the sidebar.")
     st.stop()
 
-# Render chat history
+# Chat Stream Component
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
         if msg["role"] == "assistant" and msg.get("sources"):
-            with st.expander("🔍 View References", expanded=False):
+            with st.expander("🔍 Verified Spatial References", expanded=False):
                 for i, src in enumerate(msg["sources"], 1):
                     st.markdown(
                         f'<div class="source-card">'
-                        f'<b>[{i}] {src["pdf"]} (Page {src["page"]})</b><br>{src["text"]}'
+                        f'<b>[{i}] {src["pdf"]} — (Page {src["page"]})</b><br>{src["text"]}'
                         f'</div>',
                         unsafe_allow_html=True,
                     )
 
-# Chat input
-if question := st.chat_input("Query your GIS documents..."):
+# Input Processor
+if question := st.chat_input("Ask a technical geospatial query..."):
     st.session_state.messages.append({"role": "user", "content": question})
     with st.chat_message("user"):
         st.markdown(question)
 
     with st.chat_message("assistant"):
-        with st.spinner("Retrieving spatial context..."):
+        with st.spinner("Executing Vector Similarity Search..."):
             entry = assistant.ask(question)
 
         flag = "🇸🇦" if entry["language"] == "ar" else "🇬🇧"
-        response_text = f"{flag} {entry['answer']}"
-        st.markdown(response_text)
+        response_content = f"{flag} {entry['answer']}"
+        st.markdown(response_content)
 
-        with st.expander("🔍 View References", expanded=False):
+        with st.expander("🔍 Verified Spatial References", expanded=False):
             for i, src in enumerate(entry["sources"], 1):
                 st.markdown(
                     f'<div class="source-card">'
-                    f'<b>[{i}] {src["pdf"]} (Page {src["page"]})</b><br>{src["text"]}'
+                    f'<b>[{i}] {src["pdf"]} — (Page {src["page"]})</b><br>{src["text"]}'
                     f'</div>',
                     unsafe_allow_html=True,
                 )
 
     st.session_state.messages.append({
         "role": "assistant",
-        "content": response_text,
+        "content": response_content,
         "sources": entry["sources"],
     })
 
-# Analytics section
+# Analytics Reporting Dashboard
 if assistant.chat_history and assistant.page_usage:
     st.divider()
-    with st.expander("📊 Document Analytics", expanded=False):
+    with st.expander("📊 Document Usage & Citations Heatmap", expanded=False):
         top_pages = assistant.page_usage.most_common(10)
-        df = pd.DataFrame(top_pages, columns=["Reference", "Hits"])
-        st.bar_chart(df.set_index("Reference"))
+        df = pd.DataFrame(top_pages, columns=["Document Reference", "Citation Density"])
+        st.bar_chart(df.set_index("Document Reference"))
