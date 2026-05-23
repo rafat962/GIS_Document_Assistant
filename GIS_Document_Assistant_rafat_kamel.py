@@ -6,7 +6,7 @@ from collections import Counter
 import pandas as pd
 import streamlit as st
 
-# Force override telemetry settings for chromadb before any imports
+# Force fully disabled telemetry globally before any chromadb interactions
 os.environ["ANONYMIZED_TELEMETRY"] = "False"
 
 try:
@@ -101,6 +101,8 @@ class GISDocumentAssistant:
         from langchain_community.document_loaders import PyPDFLoader
         from langchain_text_splitters import RecursiveCharacterTextSplitter
         from langchain_chroma import Chroma
+        import chromadb
+        from chromadb.config import Settings
 
         pages = PyPDFLoader(pdf_path).load()
         for p in pages:
@@ -113,10 +115,14 @@ class GISDocumentAssistant:
         chunks = splitter.split_documents(pages)
 
         if self.vectorstore is None:
+            isolated_client = chromadb.EphemeralClient(
+                settings=Settings(anonymized_telemetry=False, allow_reset=True)
+            )
             self.vectorstore = Chroma.from_documents(
                 documents=chunks, 
                 embedding=self.embeddings,
-                collection_name="gis_assistant_collection"
+                client=isolated_client,
+                collection_name="gis_isolated_collection"
             )
         else:
             self.vectorstore.add_documents(chunks)
