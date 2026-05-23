@@ -2,9 +2,11 @@ streamlit
 langchain
 langchain-google-genai
 langchain-community
-langchain-chroma
+langchain-chroma>=0.1.2
 langchain-text-splitters
 pypdf
-chromadb
+chromadb>=0.5.0
 pandas
 pysqlite3-binary
+protobuf==4.25.3
+google-protobuf==4.25.3

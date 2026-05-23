@@ -270,7 +270,7 @@ with col_header:
     st.title("🌐 GIS Document Assistant")
     st.caption("Semantic Neural Search over Geospatial Mapping Documentation Engine.")
 
-# Top Metrics Panel (Real-time Statistics)
+# Top Metrics Panel (Real-time Statistics Dashboard)
 if assistant and assistant.loaded_pdfs:
     with col_metrics:
         c1, c2, c3 = st.columns(3)
