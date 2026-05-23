@@ -22,53 +22,53 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Premium Dark & Modern UI Styling
+# Premium Light & Modern UI Styling
 st.markdown("""
 <style>
-    /* Main container adjustments */
-    .reportview-container {
-        background: #0e1117;
+    /* Main container background */
+    .stApp {
+        background-color: #fcfcfc;
     }
     
-    /* Message Cards Styling */
+    /* Message Cards Styling for Light Mode */
     [data-testid="stChatMessage"] { 
         border-radius: 16px; 
         margin-bottom: 14px;
         padding: 20px;
-        border: 1px solid #262730;
-        background-color: #161b22;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border: 1px solid #eef2f6;
+        background-color: #ffffff;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
     }
     
-    /* Document source references */
+    /* Document source references in Light Mode */
     .source-card {
-        background: #0d1117;
-        border-left: 4px solid #1f6feb;
+        background: #f8fafc;
+        border-left: 4px solid #0284c7;
         border-radius: 8px;
         padding: 14px 18px;
         margin: 10px 0;
         font-size: 13.5px;
-        color: #c9d1d9;
-        border-top: 1px solid #21262d;
-        border-right: 1px solid #21262d;
-        border-bottom: 1px solid #21262d;
+        color: #334155;
+        border-top: 1px solid #e2e8f0;
+        border-right: 1px solid #e2e8f0;
+        border-bottom: 1px solid #e2e8f0;
     }
     
-    /* Premium Dashboard Stats */
+    /* Modern Light Dashboard Stats */
     .stat-box {
-        background: #161b22;
-        border: 1px solid #30363d;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
         border-radius: 14px;
         padding: 18px;
         text-align: center;
         font-size: 26px;
         font-weight: 700;
-        color: #58a6ff;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        color: #0284c7;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
     }
     .stat-label { 
         font-size: 12px; 
-        color: #8b949e; 
+        color: #64748b; 
         font-weight: 600; 
         text-transform: uppercase;
         letter-spacing: 0.8px;
@@ -78,7 +78,7 @@ st.markdown("""
     /* Brand Footer */
     .footer {
         font-size: 11px;
-        color: #484f58;
+        color: #94a3b8;
         text-align: center;
         margin-top: 50px;
         letter-spacing: 0.5px;
