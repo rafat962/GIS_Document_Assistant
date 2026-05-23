@@ -22,63 +22,74 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Premium Light & Modern UI Styling
+# Premium Dark & Cyberpunk UI Styling
 st.markdown("""
 <style>
     /* Main container background */
     .stApp {
-        background-color: #fcfcfc;
+        background-color: #0d1117;
     }
     
-    /* Message Cards Styling for Light Mode */
+    /* Sidebar styling override */
+    [data-testid="stSidebar"] {
+        background-color: #161b22;
+        border-right: 1px solid #30363d;
+    }
+    
+    /* Message Cards Styling for Dark Mode */
     [data-testid="stChatMessage"] { 
         border-radius: 16px; 
         margin-bottom: 14px;
         padding: 20px;
-        border: 1px solid #eef2f6;
-        background-color: #ffffff;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        border: 1px solid #30363d;
+        background-color: #161b22;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
     
-    /* Document source references in Light Mode */
+    /* Document source references in Dark Mode */
     .source-card {
-        background: #f8fafc;
-        border-left: 4px solid #0284c7;
+        background: #0d1117;
+        border-left: 4px solid #58a6ff;
         border-radius: 8px;
         padding: 14px 18px;
         margin: 10px 0;
         font-size: 13.5px;
-        color: #334155;
-        border-top: 1px solid #e2e8f0;
-        border-right: 1px solid #e2e8f0;
-        border-bottom: 1px solid #e2e8f0;
+        color: #c9d1d9;
+        border-top: 1px solid #30363d;
+        border-right: 1px solid #30363d;
+        border-bottom: 1px solid #30363d;
     }
     
-    /* Modern Light Dashboard Stats */
+    /* Modern Dark Dashboard Stats */
     .stat-box {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
+        background: #161b22;
+        border: 1px solid #30363d;
         border-radius: 14px;
         padding: 18px;
         text-align: center;
         font-size: 26px;
         font-weight: 700;
-        color: #0284c7;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
+        color: #58a6ff;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
     }
     .stat-label { 
         font-size: 12px; 
-        color: #64748b; 
+        color: #8b949e; 
         font-weight: 600; 
         text-transform: uppercase;
         letter-spacing: 0.8px;
         margin-top: 4px;
     }
     
+    /* Headers & Text color adjustments for Dark Mode */
+    h1, h2, h3, h4, h5, h6, p, span, label {
+        color: #c9d1d9 !important;
+    }
+    
     /* Brand Footer */
     .footer {
         font-size: 11px;
-        color: #94a3b8;
+        color: #484f58;
         text-align: center;
         margin-top: 50px;
         letter-spacing: 0.5px;
