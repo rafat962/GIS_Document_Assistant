@@ -6,7 +6,7 @@ from collections import Counter
 import pandas as pd
 import streamlit as st
 
-# Fix SQLite compatibility on Linux servers
+# FORCE POPULATE MODERN SQLITE3 BEFORE CHROMADB IMPORTS
 try:
     __import__('pysqlite3')
     import sys
@@ -22,21 +22,16 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Premium Dark & Cyberpunk UI Styling
+# Premium Dark UI Styling
 st.markdown("""
 <style>
-    /* Main container background */
     .stApp {
         background-color: #0d1117;
     }
-    
-    /* Sidebar styling override */
     [data-testid="stSidebar"] {
         background-color: #161b22;
         border-right: 1px solid #30363d;
     }
-    
-    /* Message Cards Styling for Dark Mode */
     [data-testid="stChatMessage"] { 
         border-radius: 16px; 
         margin-bottom: 14px;
@@ -45,8 +40,6 @@ st.markdown("""
         background-color: #161b22;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
-    
-    /* Document source references in Dark Mode */
     .source-card {
         background: #0d1117;
         border-left: 4px solid #58a6ff;
@@ -55,12 +48,8 @@ st.markdown("""
         margin: 10px 0;
         font-size: 13.5px;
         color: #c9d1d9;
-        border-top: 1px solid #30363d;
-        border-right: 1px solid #30363d;
-        border-bottom: 1px solid #30363d;
+        border: 1px solid #30363d;
     }
-    
-    /* Modern Dark Dashboard Stats */
     .stat-box {
         background: #161b22;
         border: 1px solid #30363d;
@@ -80,13 +69,9 @@ st.markdown("""
         letter-spacing: 0.8px;
         margin-top: 4px;
     }
-    
-    /* Headers & Text color adjustments for Dark Mode */
     h1, h2, h3, h4, h5, h6, p, span, label {
         color: #c9d1d9 !important;
     }
-    
-    /* Brand Footer */
     .footer {
         font-size: 11px;
         color: #484f58;
@@ -127,8 +112,9 @@ class GISDocumentAssistant:
 
         if self.vectorstore is None:
             self.vectorstore = Chroma.from_documents(
-                documents=chunks, embedding=self.embeddings,
-                collection_name="gis_rafat_kamel"
+                documents=chunks, 
+                embedding=self.embeddings,
+                collection_name="gis_assistant_collection"
             )
         else:
             self.vectorstore.add_documents(chunks)
@@ -163,7 +149,7 @@ class GISDocumentAssistant:
         answer = self.llm.invoke(self._build_prompt(question, context, lang)).content
 
         for c in chunks:
-            key = f"{c.metadata.get('pdf_name','?')} · p.{c.metadata.get('page','?')}"
+            key = f"{c.metadata.get('pdf_name','?')} (p. {c.metadata.get('page','?')})"
             self.page_usage[key] += 1
 
         entry = {
@@ -196,14 +182,15 @@ class GISDocumentAssistant:
         return json.dumps(payload, ensure_ascii=False, indent=2)
 
 
-# Session state Initialization
-assistant: GISDocumentAssistant = st.session_state.get("assistant", None)
-
+# Session State Management
+if "assistant" not in st.session_state:
+    st.session_state.assistant = None
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+assistant: GISDocumentAssistant = st.session_state.assistant
 
-# Sidebar Control Panel
+# Sidebar Panel Architecture
 with st.sidebar:
     st.title("🌐 GIS Insight")
     st.caption("Advanced Document Intelligence")
@@ -212,7 +199,7 @@ with st.sidebar:
     st.subheader("🔑 Authentication")
     api_key = st.text_input("Gemini API Key", type="password", placeholder="Paste AIzaSy...")
 
-    if api_key and st.session_state.get("assistant") is None:
+    if api_key and st.session_state.assistant is None:
         st.session_state.assistant = GISDocumentAssistant(api_key)
         st.rerun()
 
@@ -230,10 +217,8 @@ with st.sidebar:
         label_visibility="collapsed",
     )
 
-    if uploaded_files:
-        assistant = st.session_state.assistant
+    if uploaded_files and assistant:
         already_loaded = set(assistant.loaded_pdfs)
-
         for uploaded in uploaded_files:
             if uploaded.name not in already_loaded:
                 with st.spinner(f"Processing {uploaded.name}..."):
@@ -243,6 +228,7 @@ with st.sidebar:
                     n = assistant.load_pdf(tmp_path, uploaded.name)
                     os.unlink(tmp_path)
                 st.toast(f"Indexed: {uploaded.name} ({n} chunks)", icon="⚡")
+                st.rerun()
 
     if assistant and assistant.loaded_pdfs:
         with st.expander("📚 Active Core Database", expanded=True):
@@ -262,8 +248,9 @@ with st.sidebar:
 
     if st.button("🗑️ Clear Workspace", use_container_width=True, type="primary"):
         st.session_state.messages = []
-        if st.session_state.get("assistant"):
+        if st.session_state.assistant:
             st.session_state.assistant.chat_history = []
+            st.session_state.assistant.page_usage = Counter()
         st.rerun()
 
     st.markdown('<div class="footer">GIS_Document_Assistant_rafat_kamel • v2.0</div>', unsafe_allow_html=True)
@@ -275,6 +262,7 @@ with col_header:
     st.title("🌐 GIS Document Assistant")
     st.caption("Semantic Neural Search over Geospatial Mapping Documentation Engine.")
 
+# Top Metrics Panel (Real-time Statistics)
 if assistant and assistant.loaded_pdfs:
     with col_metrics:
         c1, c2, c3 = st.columns(3)
@@ -291,7 +279,7 @@ if not assistant or not assistant.loaded_pdfs:
     st.info("💡 Get started by uploading specialized GIS map specs or project guidelines via the sidebar.")
     st.stop()
 
-# Chat Stream Component
+# Chat Stream Execution
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
@@ -305,7 +293,7 @@ for msg in st.session_state.messages:
                         unsafe_allow_html=True,
                     )
 
-# Input Processor
+# Input Prompt Handling
 if question := st.chat_input("Ask a technical geospatial query..."):
     st.session_state.messages.append({"role": "user", "content": question})
     with st.chat_message("user"):
@@ -333,11 +321,13 @@ if question := st.chat_input("Ask a technical geospatial query..."):
         "content": response_content,
         "sources": entry["sources"],
     })
+    st.rerun()
 
-# Analytics Reporting Dashboard
-if assistant.chat_history and assistant.page_usage:
+# --- Analytics Dashboard & Citation Heatmap Section ---
+if assistant and assistant.chat_history and assistant.page_usage:
     st.divider()
-    with st.expander("📊 Document Usage & Citations Heatmap", expanded=False):
-        top_pages = assistant.page_usage.most_common(10)
-        df = pd.DataFrame(top_pages, columns=["Document Reference", "Citation Density"])
-        st.bar_chart(df.set_index("Document Reference"))
+    st.subheader("📊 Document Analytics & Citation Heatmap")
+    
+    top_pages = assistant.page_usage.most_common(10)
+    df_stats = pd.DataFrame(top_pages, columns=["Document Reference", "Citation Density"])
+    st.bar_chart(df_stats.set_index("Document Reference"))
